@@ -1,0 +1,20 @@
+﻿@inherits ProfilePage
+@page "/account/profile"
+@attribute [Authorize]
+
+<MudContainer MaxWidth="MaxWidth.False">
+    <PageTitle>@L["User Profile"]</PageTitle>
+
+    @if (userViewModel == null)
+    {
+        <LoadingBackground />
+    }
+    else
+    {
+        <SelectCulture />
+        <UserViewModelPanel Model="@userViewModel" BackLink="/" />
+    }
+</MudContainer>
+@code {
+
+}

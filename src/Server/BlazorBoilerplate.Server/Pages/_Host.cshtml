@@ -1,0 +1,120 @@
+﻿@page "/"
+@namespace BlazorBoilerplate.Server.Pages
+@model HostModel
+
+@using BlazorBoilerplate.Infrastructure.Server
+@using BlazorBoilerplate.Shared
+@using BlazorBoilerplate.Shared.Models
+@using BlazorBoilerplate.Shared.Services
+@using BlazorBoilerplate.Theme.Root
+@using Microsoft.AspNetCore.Components.Web
+@using Microsoft.AspNetCore.Hosting
+@using Microsoft.AspNetCore.Localization
+@using System.Globalization
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@inject IWebHostEnvironment env
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <meta name="author" content="Enkodellc / Keith Fimreite, Giovanni Quarella">
+    <meta name="description" content="Blazor Boilerplate & Starter Kit - A real world Example ">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-touch-fullscreen" content="yes">
+    @if (AppState.Runtime == BlazorRuntime.Server)
+    {
+        <title>BlazorBoilerplate (Server)</title>
+    }
+    else
+    {
+        <title>BlazorBoilerplate (WASM)</title>
+    }
+    <base href="/">
+    <link href="manifest.json" rel="manifest">
+    <link rel="shortcut icon" type="image/x-icon" href="_content/BlazorBoilerplate.Theme.MudBlazor/images/favicon.ico">
+    <link rel="icon" type="image/x-icon" href="_content/BlazorBoilerplate.Theme.MudBlazor/images/favicon.ico">
+    <link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet">
+    <link href="_content/BlazorBoilerplate.Theme.MudBlazor/css/site.css" rel="stylesheet">
+    <link href="_content/BlazorBoilerplate.Theme.MudBlazor/BlazorBoilerplate.Theme.MudBlazor.bundle.scp.css" rel="stylesheet">
+    <link href="_content/BlazorBoilerplate.Theme.MudBlazor.Main/css/site.css" rel="stylesheet">
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+    <link href="https://cdn.quilljs.com/1.3.6/quill.bubble.css" rel="stylesheet">
+    <link href="./_content/IntlTelInputBlazor/css/intlTelInput.css" rel="stylesheet">
+    @if (AppState.Runtime == BlazorRuntime.Server)
+    {
+        <component type="typeof(HeadOutlet)" render-mode="ServerPrerendered" />
+    }
+</head>
+<body>
+    @{
+        if (HttpContext.Request.Cookies[CookieRequestCultureProvider.DefaultCookieName] == null)
+            HttpContext.Response.Cookies.Append(
+            CookieRequestCultureProvider.DefaultCookieName,
+            CookieRequestCultureProvider.MakeCookieValue(
+            new RequestCulture(
+            CultureInfo.CurrentCulture,
+            CultureInfo.CurrentUICulture)),
+            new Microsoft.AspNetCore.Http.CookieOptions() { Expires = DateTimeOffset.Now.AddDays(30) });
+    }
+
+    @if (AppState.Runtime == BlazorRuntime.Server)
+    {
+        @(Html.AntiForgeryToken())
+        <component type="typeof(App)" render-mode="Server" />
+    }
+    else
+    {
+        <div id="app">
+            <div class="triangle-container" style="background-color: blue">
+                <div class="triangles">
+                </div>
+            </div>
+            <div style="position:absolute; top:30vh; width:100%; text-align:center; color: white">
+                <h1>Blazor Boilerplate...</h1>
+                <div style="display:flex; gap:10px; justify-content:center; align-items:center">
+                    <img src="_content/BlazorBoilerplate.Theme.MudBlazor/images/logo.svg" alt="Loading" title="Loading BlazorBoilerplate" />
+                </div>
+            </div>
+        </div>
+    }
+
+    <div id="blazor-error-ui" data-nosnippet>
+        <i class="material-icons">error</i>
+        <environment include="Staging,Production">
+            An error has occurred. This application may no longer respond until reloaded.
+        </environment>
+        <environment include="Development">
+            An unhandled exception has occurred. See browser dev tools for details.
+        </environment>
+        <a href="" class="reload">Reload</a>
+        <a class="dismiss">🗙</a>
+    </div>
+
+    <!-- load remaining JS after blazor boot loads -->
+    <script src="_content/BlazorBoilerplate.Theme.MudBlazor/js/interop.js"></script>
+    <script>navigator.serviceWorker.register('service-worker.js');</script>
+    <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCF0emevacMGNnyjCxldlboBx9-QK0ZD7k&v=3&libraries=places"></script>
+    <script src="_content/BlazorGoogleMaps/js/objectManager.js"></script>
+    <script src="https://unpkg.com/@@googlemaps/markerclustererplus/dist/index.min.js"></script>
+
+    <script src="_content/IntlTelInputBlazor/js/intlTelInput.js"></script>
+
+    <script src="_content/MudBlazor/MudBlazor.min.js"></script>
+
+    <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+    <script src="_content/Blazored.TextEditor/quill-blot-formatter.min.js"></script>
+    <script src="_content/Blazored.TextEditor/Blazored-BlazorQuill.js"></script>
+
+    @if (AppState.Runtime == BlazorRuntime.Server)
+    {
+        <script src="_framework/blazor.server.js"></script>
+    }
+    else
+    {
+        <script src="_framework/blazor.webassembly.js"></script>
+    }
+</body>
+</html>
