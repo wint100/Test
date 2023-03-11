@@ -1,0 +1,79 @@
+@inherits ApiResourcesPage
+@page "/admin/apiResources"
+@attribute [AuthorizeForFeature(UserFeatures.Administrator)]
+@layout AdminLayout
+
+
+<TopSection>
+    <Breadcrumbs>
+        <Breadcrumb Link="/admin" Title=@L["BreadCrumbadmin"] />
+        <Breadcrumb Title=@L["BreadCrumbadminapiResources"] />
+    </Breadcrumbs>
+</TopSection>
+
+<PageTitle>@L["ApiResources"]</PageTitle>
+
+@if (apiResources == null)
+{
+    <LoadingBackground>
+        <label>@L["Loading"]</label>
+    </LoadingBackground>
+}
+else
+{
+    <MudTable Items="@apiResources" Striped="true" Bordered="true" Dense="true" Hover="true" Elevation="2">
+        <HeaderContent>
+            <MudTh><MudFab Icon="@Icons.Material.Filled.Add" OnClick="@(() => navigationManager.NavigateTo("/admin/apiResource/add"))" Color="Color.Primary" Size="Size.Medium" /></MudTh>
+            <MudTh>@L["Name"]</MudTh>
+            <MudTh>Enabled</MudTh>
+            <MudTh>Display Name</MudTh>
+            <MudTh>Description</MudTh>
+            <MudTh>Scopes</MudTh>
+            <MudTh>User Claims</MudTh>
+        </HeaderContent>
+        <RowTemplate Context="ApiResourceRow">
+            <MudTd>
+                <div style="width:155px;">
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit" OnClick="@(() => navigationManager.NavigateTo($"/admin/apiResource/{ApiResourceRow.Name}"))"></MudIconButton>
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete" OnClick="@(() => OpenDeleteApiResourceDialog(ApiResourceRow))"></MudIconButton>
+                </div>
+            </MudTd>
+            <MudTd><div style="min-width:130px;">@ApiResourceRow.Name</div></MudTd>
+            <MudTd><MudSwitch Checked="@ApiResourceRow.Enabled" CheckedChanged="@((bool item) => UpdateEnabled(ApiResourceRow))" Color="Color.Primary" /></MudTd>
+            <MudTd><div style="min-width:130px;">@ApiResourceRow.DisplayName</div></MudTd>
+            <MudTd><div style="min-width:130px;">@ApiResourceRow.Description</div></MudTd>
+            <MudTd>
+                <MudChipSet>
+                    @foreach (var scope in ApiResourceRow.Scopes)
+                    {
+                        <MudChip Text="@scope"></MudChip>
+                    }
+                </MudChipSet>
+            </MudTd>
+            <MudTd>
+                <MudChipSet>
+                    @foreach (var userClaim in ApiResourceRow.UserClaims)
+                    {
+                        <MudChip Text="@userClaim"></MudChip>
+                    }
+                </MudChipSet>
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+}
+
+<MudDialog @bind-IsVisible="@isDeleteApiResourceDialogOpen" Style="z-index:100">
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.DeleteForever" Class="mr-3 mb-n1" />
+            @L["Confirm Delete"]
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        @L["Are you sure you want to delete {0}?", currentApiResource.Name]
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(e => { isDeleteApiResourceDialogOpen = false; })">@L["Cancel"]</MudButton>
+        <MudButton OnClick="@DeleteApiResourceAsync" Variant="Variant.Filled" Color="Color.Error">@L["Delete"]</MudButton>
+    </DialogActions>
+</MudDialog>

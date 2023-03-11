@@ -1,0 +1,172 @@
+﻿@inherits UsersPage
+@page "/admin/users"
+@attribute [AuthorizeForFeature(UserFeatures.Administrator)]
+@layout AdminLayout
+
+<TopSection>
+    <Breadcrumbs>
+        <Breadcrumb Link="/admin" Title=@L["BreadCrumbadmin"] />
+        <Breadcrumb Title=@L["BreadCrumbadminusers"] />
+    </Breadcrumbs>
+</TopSection>
+
+<PageTitle>@L["Users"]</PageTitle>
+
+<MudGrid Spacing="0" Class="my-4" Style="align-items: center; justify-content: space-around !important;">
+
+    <MudItem xs="6" sm="3" Class="px-8 mt-2 d-flex justify-center">
+        <MudTextField T="string" @bind-Value="userFilter.Search" Immediate="true" Label="@L["Search"]" AdornmentIcon="@Icons.Material.Filled.Search" Adornment="Adornment.End" AdornmentColor="Color.Secondary" HelperTextOnFocus="true"></MudTextField>
+    </MudItem>
+    <MudItem xs="12" sm="6" md="3" lg="2" Class="px-8 mt-2 d-flex justify-center">
+        <MudCheckBox TriState="true" @bind-Checked="@userFilter.EmailConfirmed" Label="@L["Email Confirmed"]" Color="Color.Primary"></MudCheckBox>
+    </MudItem>
+    <MudItem xs="12" sm="6" md="3" lg="2" Class="px-8 mt-2 d-flex justify-center">
+        <MudCheckBox TriState="true" @bind-Checked="@userFilter.PhoneNumberConfirmed" Label="@L["Phone Number Confirmed"]"></MudCheckBox>
+    </MudItem>
+    <MudItem xs="12" sm="6" md="3" lg="2" Class="px-8 mt-2 d-flex justify-center">
+        <div class="d-flex" style="width: fit-content;">
+            <MudTooltip Text="Clear / Reset Filter" Placement="Placement.Left">
+                <MudFab Color="Color.Tertiary" Class="mx-2" OnClick="@ResetFilter" Disabled="@isBusy" Size="Size.Small" StartIcon="@Icons.Material.Filled.Refresh"></MudFab>
+            </MudTooltip>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@SearchUsers" Disabled="@isBusy" StartIcon="@Icons.Material.Filled.Search">Search</MudButton>
+        </div>
+    </MudItem>
+</MudGrid>
+
+@if (items == null)
+{
+    <LoadingBackground>
+        <label>@L["Loading"]</label>
+    </LoadingBackground>
+}
+else
+{
+    <MudTable ServerData="@(new Func<TableState, Task<TableData<ApplicationUser>>>(ServerReload))" Striped="true" Bordered="true" Dense="true" Hover="true" Elevation="2" @ref="table">
+        <HeaderContent>
+            <MudTh><MudButton StartIcon="@Icons.Material.Filled.PersonAdd" OnClick="@(e => { createUserDialogOpen = true; })" Variant="Variant.Filled" Color="Color.Primary">@L["New User"]</MudButton></MudTh>
+            @*Email and UserName are not localized in the sort label because they are used for querying and localizing would mess it up*@
+            <MudTh><MudTableSortLabel T="ApplicationUser" SortLabel="UserName">@L["UserName"]</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel T="ApplicationUser" SortLabel="Email">@L["Email"]</MudTableSortLabel></MudTh>
+            <MudTh>@L["Roles"]</MudTh>
+        </HeaderContent>
+        <RowTemplate Context="UserRow">
+            <MudTd>
+                <div style="width:155px;">
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit" OnClick="@(() => OpenEditDialog(UserRow))"></MudIconButton>
+                    <MudIconButton Icon="@Icons.Material.Filled.RotateRight" OnClick="@(() => OpenResetPasswordDialog(UserRow))" Disabled="@(UserRow.UserName == DefaultUserNames.Administrator)"></MudIconButton>
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete" OnClick="@(() => OpenDeleteDialog(UserRow))" Disabled="@(UserRow.UserName == DefaultUserNames.Administrator)"></MudIconButton>
+                </div>
+            </MudTd>
+            <MudTd><div style="width:130px;">@UserRow.UserName</div></MudTd>
+            <MudTd style="white-space: nowrap">
+                @UserRow.Email @if (UserRow.EmailConfirmed)
+                    {<MudIcon Style="vertical-align: text-bottom" Icon="@Icons.Material.Filled.CheckCircle"></MudIcon>}
+            </MudTd>
+            <MudTd>
+                @if (@UserRow.UserRoles != null)
+                    {<MudChipSet>
+                        @foreach (var ur in @UserRow.UserRoles)
+                            {
+                            <MudChip Text="@ur.Role.Name"></MudChip>
+                            }
+                    </MudChipSet>}
+            </MudTd>
+        </RowTemplate>
+        <PagerContent>
+            <MudTablePager RowsPerPageString=@L["Rows per page"] />
+        </PagerContent>
+    </MudTable>
+}
+
+<MudDialog @bind-IsVisible="@createUserDialogOpen">
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Add" Class="mr-3 mb-n1" />
+            @L["New User"]
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <EditForm id="createUserForm" Model="@newUserViewModel" OnValidSubmit="@CreateUserAsync">
+            <FluentValidationValidator />
+            <MudValidationSummary />
+            <MudTextField @bind-Value="@newUserViewModel.UserName" Label=@L["UserName"] AdornmentIcon="@Icons.Material.Filled.Person" Adornment="Adornment.End" FullWidth="true" Required="true" RequiredError=@L["Required"]></MudTextField>
+
+            <MudTextField @bind-Value="@newUserViewModel.Email" Label=@L["Email"] AdornmentIcon="@Icons.Material.Outlined.Email" Adornment="Adornment.End" FullWidth="true" Required="true" RequiredError=@L["Required"] Type="mail"></MudTextField>
+
+            <MudTextField @bind-Value="@newUserViewModel.Password" Label=@L["Password"] AdornmentIcon="@Icons.Material.Outlined.Lock" Adornment="Adornment.End" FullWidth="true" Required="true" RequiredError=@L["Required"] InputType="InputType.Password"></MudTextField>
+
+            <MudTextField @bind-Value="@newUserViewModel.PasswordConfirm" Label=@L["Password Confirmation"] AdornmentIcon="@Icons.Material.Outlined.Lock" Adornment="Adornment.End" FullWidth="true" Required="true" RequiredError=@L["Required"] InputType="InputType.Password"></MudTextField>
+        </EditForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(e => { createUserDialogOpen = false; })">@L["Cancel"]</MudButton>
+        <MudButton ButtonType="ButtonType.Submit" form="createUserForm" Disabled="@disableCreateUserButton" Variant="Variant.Filled" Color="Color.Primary">@L["Create"]</MudButton>
+    </DialogActions>
+</MudDialog>
+
+<MudDialog @bind-IsVisible="@editDialogOpen">
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3 mb-n1" />
+            @L["Edit {0}", currentUser.UserName]
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <EditForm id="updateUserForm" Model="@currentUser" OnValidSubmit="@UpdateUserAsync">
+            <FluentValidationValidator />
+            <MudValidationSummary />
+            <MudTextField @bind-Value="@currentUser.UserName" Label=@L["UserName"] AdornmentIcon="@Icons.Material.Filled.Person" Adornment="Adornment.End" FullWidth="true" Required="true" RequiredError=@L["Required"]></MudTextField>
+
+            <MudTextField @bind-Value="@currentUser.Email" Label=@L["Email"] AdornmentIcon="@Icons.Material.Outlined.Email" Adornment="Adornment.End" FullWidth="true" Required="true" RequiredError=@L["Required"] Type="mail"></MudTextField>
+
+            <MudChipSet>
+                @foreach (var role in roleSelections.OrderBy(x => x.DisplayValue))
+                {
+                    <MudChip Text="@role.DisplayValue" Icon="@((role.Selected) ? Icons.Material.Filled.Done : "")" @onclick="@(()=>UpdateUserRole(role))" />
+                }
+            </MudChipSet>
+        </EditForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@CancelChanges">@L["Cancel"]</MudButton>
+        <MudButton ButtonType="ButtonType.Submit" form="updateUserForm" Disabled="@disableUpdateUserButton" Variant="Variant.Filled" Color="Color.Primary">@L["Update"]</MudButton>
+    </DialogActions>
+</MudDialog>
+
+<MudDialog @bind-IsVisible="@deleteUserDialogOpen" Style="z-index:100">
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.DeleteForever" Class="mr-3 mb-n1" />
+            @L["Confirm Delete"]
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        @L["Are you sure you want to delete {0}?", currentUser.UserName]
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(e => { deleteUserDialogOpen = false; })">@L["Cancel"]</MudButton>
+        <MudButton OnClick="@DeleteUserAsync" Variant="Variant.Filled" Color="Color.Error">@L["Delete"]</MudButton>
+    </DialogActions>
+</MudDialog>
+
+<MudDialog @bind-IsVisible="@changePasswordDialogOpen">
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3 mb-n1" />
+            @L["Change password for {0}", currentUser.UserName]
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <EditForm id="changePasswordForm" Model="@changePasswordViewModel" OnValidSubmit="@ResetUserPasswordAsync">
+            <FluentValidationValidator />
+            <MudValidationSummary />
+            <MudTextField @bind-Value="@changePasswordViewModel.Password" Label=@L["Password"] AdornmentIcon="@Icons.Material.Outlined.Lock" Adornment="Adornment.End" FullWidth="true" Required="true" RequiredError=@L["Required"] InputType="InputType.Password"></MudTextField>
+
+            <MudTextField @bind-Value="@changePasswordViewModel.PasswordConfirm" Label=@L["Password Confirmation"] AdornmentIcon="@Icons.Material.Outlined.Lock" Adornment="Adornment.End" FullWidth="true" Required="true" RequiredError=@L["Required"] InputType="InputType.Password"></MudTextField>
+        </EditForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(e => { changePasswordDialogOpen = false; })">@L["Cancel"]</MudButton>
+        <MudButton ButtonType="ButtonType.Submit" form="changePasswordForm" Disabled="@disableChangePasswordButton" Variant="Variant.Filled" Color="Color.Primary">@L["Reset Password"]</MudButton>
+    </DialogActions>
+</MudDialog>

@@ -1,0 +1,65 @@
+﻿@using Microsoft.AspNetCore.Components
+@inject NavigationManager navigationManager
+@inject AuthenticationStateProvider authStateProvider
+@inject AppState appState
+@inject IViewNotifier viewNotifier
+@inject IStringLocalizer<Global> L
+
+<AuthorizeView Context="AuthorizeContext">
+    <Authorized>
+        <MudTooltip Text="@(ShowLogOutLabel ? null : L["Logout"])" Placement="Placement.End">
+            <MudButton StartIcon="@Icons.Material.Filled.ExitToApp" Color="Color.Inherit" OnClick="LogoutClick" Style="min-width: auto; padding-right:0">
+                @if (ShowLogOutLabel)
+                {
+                    @L["Logout"]
+                }
+            </MudButton>
+        </MudTooltip>
+    </Authorized>
+    <NotAuthorized>
+        <MudTooltip Text="@(ShowLogInLabel ? null : L["Login"])" Placement="Placement.End">
+            <MudButton StartIcon="@Icons.Material.Filled.AccountBox" Color="Color.Inherit" OnClick="LoginClick">
+                @if (ShowLogInLabel)
+                {
+                    @L["Login"]
+                }
+            </MudButton>
+        </MudTooltip>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    [Parameter]
+    public bool ShowLogOutLabel { get; set; }
+
+    [Parameter]
+    public bool ShowLogInLabel { get; set; }
+
+    async Task LogoutClick()
+    {
+        appState.ClearUserProfile();
+
+        if (authStateProvider is OidcAuthenticationStateProvider oidcAuthenticationStateProvider)
+        {
+            var response = await oidcAuthenticationStateProvider.Logout();
+
+            if (!response.IsSuccessStatusCode)
+                viewNotifier.Show(response.Message, ViewNotifierType.Error, L["LogoutFailed"]);
+        }
+        else
+            await ((IdentityAuthenticationStateProvider)authStateProvider).Logout();
+    }
+
+    async Task LoginClick()
+    {
+        if (authStateProvider is OidcAuthenticationStateProvider oidcAuthenticationStateProvider)
+        {
+            var response = await oidcAuthenticationStateProvider.Login();
+
+            if (!response.IsSuccessStatusCode)
+                viewNotifier.Show(response.Message, ViewNotifierType.Error, L["LoginFailed"]);
+        }
+        else
+            navigationManager.NavigateTo(BlazorBoilerplate.Constants.Settings.LoginPath);
+    }
+}

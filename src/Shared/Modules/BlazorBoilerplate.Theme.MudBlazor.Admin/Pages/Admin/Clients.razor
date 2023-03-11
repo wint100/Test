@@ -1,0 +1,93 @@
+@inherits ClientsPage
+@page "/admin/clients"
+@attribute [AuthorizeForFeature(UserFeatures.Administrator)]
+@layout AdminLayout
+
+<TopSection>
+    <Breadcrumbs>
+        <Breadcrumb Link="/admin" Title=@L["BreadCrumbadmin"] />
+        <Breadcrumb Title=@L["BreadCrumbadminclients"] />
+    </Breadcrumbs>
+</TopSection>
+
+<PageTitle>@L["OpenIdClients"]</PageTitle>
+
+@if (clients == null)
+{
+    <LoadingBackground>
+        <label>@L["Loading"]</label>
+    </LoadingBackground>
+}
+else
+{
+    <MudTable Items="@clients" Striped="true" Bordered="true" Dense="true" Hover="true" Elevation="2">
+        <HeaderContent>
+            <MudTh><MudFab Icon="@Icons.Material.Filled.Add" OnClick="@(() => navigationManager.NavigateTo("/admin/client/add"))" Color="Color.Primary" Size="Size.Medium" /></MudTh>
+            <MudTh>Id</MudTh>
+            <MudTh>Enabled</MudTh>
+            <MudTh>Access Token Lifetime</MudTh>
+            <MudTh>Require Client Secret</MudTh>
+            <MudTh>Require Consent</MudTh>
+            <MudTh>Local Login</MudTh>
+            <MudTh>Allowed Grant Types</MudTh>
+            <MudTh>PKCE</MudTh>
+            <MudTh>Allowed Scopes</MudTh>
+            <MudTh>Client claims</MudTh>
+        </HeaderContent>
+        <RowTemplate Context="ClientRow">
+            <MudTd>
+                <div style="width:155px;">
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit" OnClick="@(() => navigationManager.NavigateTo($"/admin/client/{ClientRow.ClientId}"))"></MudIconButton>
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete" OnClick="@(() => OpenDeleteClientDialog(ClientRow))"></MudIconButton>
+                </div>
+            </MudTd>
+            <MudTd><div style="min-width:130px;">@ClientRow.ClientId</div></MudTd>
+            <MudTd><MudSwitch Checked="@ClientRow.Enabled" CheckedChanged="@((bool i) => UpdateEnabled(ClientRow))" Color="Color.Primary" /></MudTd>
+            <MudTd><div style="min-width:130px;">@ClientRow.AccessTokenLifetime</div></MudTd>
+            <MudTd><MudSwitch @bind-Checked="@ClientRow.RequireClientSecret" Disabled="true" Color="Color.Primary" /></MudTd>
+            <MudTd><MudSwitch @bind-Checked="@ClientRow.RequireConsent" Disabled="true" Color="Color.Primary" /></MudTd>
+            <MudTd><MudSwitch @bind-Checked="@ClientRow.EnableLocalLogin" Disabled="true" Color="Color.Primary" /></MudTd>
+            <MudTd>
+                <MudChipSet>
+                    @foreach (var grantType in ClientRow.AllowedGrantTypes)
+                        {
+                        <MudChip Text="@grantType"></MudChip>
+                        }
+                </MudChipSet>
+            </MudTd>
+            <MudTd><MudSwitch @bind-Checked="@ClientRow.RequirePkce" Disabled="true" Color="Color.Primary" /></MudTd>
+            <MudTd>
+                <MudChipSet>
+                    @foreach (var scope in ClientRow.AllowedScopes)
+                        {
+                        <MudChip Text="@scope"></MudChip>
+                        }
+                </MudChipSet>
+            </MudTd>
+            <MudTd>
+                <MudChipSet>
+                    @foreach (var claim in ClientRow.Claims)
+                    {
+                        <MudChip Text="@($"{claim.Type} {claim.Value}")"></MudChip>
+                    }
+                </MudChipSet>
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+}
+
+<MudDialog @bind-IsVisible="@isDeleteClientDialogOpen" Style="z-index:100">
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.DeleteForever" Class="mr-3 mb-n1" />
+            @L["Confirm Delete"]
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        @L["Are you sure you want to delete {0}?", currentClient.ClientId]
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(e => { isDeleteClientDialogOpen = false; })">@L["Cancel"]</MudButton>
+        <MudButton OnClick="@DeleteClientAsync" Variant="Variant.Filled" Color="Color.Error">@L["Delete"]</MudButton>
+    </DialogActions>
+</MudDialog>

@@ -1,0 +1,12 @@
+﻿@page "/externalauth/success"
+
+@attribute [Authorize]
+@inject AppState appState
+@inject NavigationManager navigationManager
+@inject HttpClient Http
+@inject IStringLocalizer<Global> L
+
+<div class="loading-container">
+    <MudIcon Icon="@Icons.Material.Filled.Login" Color="Color.Primary" Style="font-size: 7em" />
+    <h1>@L["External authentication success"]</h1>
+</div>

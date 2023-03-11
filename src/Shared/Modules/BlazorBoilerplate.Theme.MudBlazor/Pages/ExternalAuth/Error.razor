@@ -1,0 +1,12 @@
+﻿@inherits ErrorPage
+@page "/externalauth/error/{ErrorEnumValue}"
+@page "/externalauth/error/{ErrorEnumValue}/{Description}"
+
+@inject IStringLocalizer<Global> L
+
+<div class="loading-container">
+    <MudIcon Icon="@Icons.Material.Filled.Error" Color="Color.Primary" Style="font-size: 7em" />
+    <h1>@L["External authentication error"]</h1>
+</div>
+
+<MudAlert Severity="Severity.Error" Class="ma-8" Variant="Variant.Filled">@errorText @Description</MudAlert>
